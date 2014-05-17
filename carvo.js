@@ -1,45 +1,87 @@
-var baseline = 0.65;
-var topline = 0.35;
-var lmargin = 0.1;
-var rmargin = 0.9;
-var width = 300;
-var height = 300;
-var maxspeed = 5;
+var dark = "#222";
+
+var horizontalLines = {
+  ascenderHeight: 0.1,
+  capHeight: 0.125,
+  median: 0.35,
+  baseline: { value: 0.42 },
+  descenderHeight: 0.575
+};
+
+var verticalLines = {
+  leftMargin: 0.1,
+  lead: 0.15,
+  origin: { value: 0.175 },
+  advance: 0.25,
+  trail: 0.275
+};
+
+var dimensions = {
+  width: 300,
+  height: 300
+};
+
 var ctx, state;
+
+function clear(){
+  ctx.clearRect(0,0,dimensions.width,dimensions.height);
+}
 
 function main(){
   var canvas = document.getElementById('canvas');
   if (canvas.getContext) {
     ctx = canvas.getContext('2d');
     state = newstate();
-    guides(ctx,width,height);
+    lines(ctx,dimensions.width,dimensions.height);
   }
 }
 
 function newstate(){
-  var state = new State(lmargin*width,baseline*height,0,0,0,0);
+  var state = new State(verticalLines.lead*dimensions.width,horizontalLines.baseline.value*dimensions.height,0,0,0,0);
   state.velocity = 1;
   state.resistance = 0.01;
   return state;
 }
 
 // Draw the glyph guides
-function guides(ctx,xscale,yscale){
+function lines(ctx,xscale,yscale){
   var old = ctx.strokeStyle;
   ctx.strokeStyle = "#cccccc";
-  ctx.beginPath();
-  ctx.moveTo(0,topline*yscale);
-  ctx.lineTo(1.0*xscale,topline*yscale);
-  ctx.moveTo(0,baseline*yscale);
-  ctx.lineTo(1.0*xscale,baseline*yscale);
-  ctx.stroke();
+  var lw = ctx.lineWidth;
+  for (var line in horizontalLines) {
+    ctx.beginPath();
+    var l = horizontalLines[line];
+    if (horizontalLines[line].value) {
+      l = l.value;
+      ctx.strokeStyle = dark;
+    } else {
+      ctx.strokeStyle = "#cccccc";
+    }
+    ctx.moveTo(0,l*yscale);
+    ctx.lineTo(xscale,l*yscale);
+    ctx.stroke();
+  }
+  for (var line in verticalLines) {
+    ctx.beginPath();
+    var l = verticalLines[line];
+    if (verticalLines[line].value) {
+      l = l.value;
+      ctx.strokeStyle = dark;
+    } else {
+      ctx.strokeStyle = "#cccccc";
+    }
+    ctx.moveTo(xscale*l,0);
+    ctx.lineTo(xscale*l,yscale);
+    ctx.stroke();
+  }
+
   ctx.strokeStyle = old;
 }
 
 function turtle(ctx,state,steps){
-  ctx.clearRect(0,0,width,height);
+  ctx.clearRect(0,0,dimensions.width,dimensions.height);
   state = newstate();
-  guides(ctx,width,height);
+  lines(ctx,dimensions.width,dimensions.height);
   var len = steps.length;
   forloop(10,0,function(){return len},1,function(i,cont){
     if(steps[i]) {
@@ -62,7 +104,7 @@ function forloop(ms,i,to,inc,body,done){
     body(i,function(){
       setTimeout(function(){
         forloop(ms,i+inc,to,inc,body,done);
-      },5-state.velocity);
+      },ms);
     });
   } else {
     done();
@@ -78,9 +120,13 @@ function update(state){
   state.velocity = Math.max(0,state.velocity-state.resistance);
   state.x = state.x + (Math.cos(state.radian) * 1);
   state.y = state.y + (Math.sin(state.radian) * 1);
-  state.pressure = (state.pressure + (Math.max(0.01,0.2 * (1 - state.velocity)))) / 2;
-  if (randomIntFromInterval(0,50) == 0){
-    state.radian = state.radian + (randomIntFromInterval(-5,5) / 70);
+  state.pressure = (state.pressure + (Math.max(0.01,0.5 * (1 - state.velocity)))) / 2;
+}
+
+function a(ratio){
+  return function(state){
+    state.radian = ratio * (Math.PI * 2);
+    return true;
   }
 }
 
@@ -96,7 +142,7 @@ function r(ratio){
   }
 }
 
-function g(speed){
+function s(speed){
   return function(state){
     state.velocity = speed;
   }
@@ -127,5 +173,3 @@ function State(x,y,ra,v,r,p){
 function randomIntFromInterval(min,max) {
   return Math.floor(Math.random()*(max-min+1)+min);
 }
-
-var a_ = [l(0.02),,l(0.02),g(3),,l(0.03),,g(0.5),r(0.05),,r(0.1),,r(0.1),,r(0.1),,r(0.1),,r(0.05),,g(0.6),,g(0.25),r(0.07),,r(0.07),,r(0.07),,g(0.3),r(0.09),,r(0.09),,r(0.06),,r(0.07),,g(0.5),,,r(0.1),,r(0.1),,r(0.1),,r(0.1),,r(0.05),,g(0.15),,l(0.09),,l(0.09),,l(0.2),,g(0.7),,l(0.01),,l(0.01),,l(0.01),,];
